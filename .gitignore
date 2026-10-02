@@ -1,0 +1,22 @@
+.env
+pool.csv
+__pycache__/
+*.pyc
+.venv/
+web/node_modules/
+web/dist/
+
+# real people: never commit
+*.xlsx
+*.csv
+synthetic_run.log
+.env
+*.log
+shots/
+live_test_token.txt
+scratch_*.py
+__pycache__/
+.pytest_cache/
+node_modules/
+web/dist/
+.impeccable/

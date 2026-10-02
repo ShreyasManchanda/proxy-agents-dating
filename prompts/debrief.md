@@ -1,0 +1,1 @@
+Below is a one-line debrief for each date {{NAME}} had, with a partner id. Rank all partners from best fit to worst fit for {{NAME}}. No ties, every id exactly once. Return JSON only: {"ranking": [partner ids in order]}.
