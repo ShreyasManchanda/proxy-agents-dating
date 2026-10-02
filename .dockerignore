@@ -1,0 +1,11 @@
+.env
+*.csv
+*.xlsx
+*.log
+shots
+web/node_modules
+web/dist
+.git
+tests
+fixtures
+__pycache__

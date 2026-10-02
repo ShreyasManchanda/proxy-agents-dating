@@ -9,3 +9,4 @@ apify-client>=1.7
 pillow>=10.0
 pytest>=8
 pytest-asyncio>=0.23
+openpyxl>=3.1

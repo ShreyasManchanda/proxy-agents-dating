@@ -1,0 +1,20 @@
+# Render blueprint. Secrets are set in the dashboard (sync: false), never committed.
+services:
+  - type: web
+    name: proxy-agents-dating
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: APIFY_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PASTE_ENABLED
+        value: "true"
+      - key: LIVE_RUN_DAILY_CAP
+        value: "12"
