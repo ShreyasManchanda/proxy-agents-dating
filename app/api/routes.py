@@ -214,13 +214,24 @@ async def rankings(token: str, request: Request, own_weight: float = settings.ow
 
 @router.get("/pools/{token}/diagnostics")
 async def diagnostics(token: str, request: Request):
+    from collections import defaultdict as dd
+    from app.scoring.core import pearson
     async with sm(request)() as db:
         pool = await _pool(db, token)
         ids = await svc.pool_members(db, pool.id)
         res = await svc.compute_rankings(db, ids)
         profs = await svc.load_profiles(db, ids)
+    # does a richer profile receive a higher score? reported, never adjusted for (n is small)
+    got: dict[int, list[float]] = dd(list)
+    for rows in res["rankings"].values():
+        for r in rows:
+            got[r["target"]].append(r["own"])
+    both = [(profs[i].get("richness_score"), sum(v) / len(v)) for i, v in got.items()
+            if i in profs and profs[i].get("richness_score") is not None]
+    stored = (pool.stats or {}).get("diagnostics") or {}
     return {"hypothesis": res["hypothesis"], "n_people": len(ids), "n_dates": res["n_dates"],
-            "richness": {str(i): (profs.get(i) or {}).get("richness_score") for i in ids},
+            "richness_vs_score": {"r": pearson([a for a, _ in both], [b for _, b in both]), "n": len(both)},
+            "test_retest": stored.get("test_retest"), "order_swap": stored.get("order_swap"),
             "notes": ["Consistency is measurable here; correctness is not.",
                       "Attraction cannot be measured from two public profiles."]}
 

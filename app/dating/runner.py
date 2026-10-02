@@ -181,12 +181,13 @@ async def _verdict(gw: Gateway, me: Person, transcript: list[dict], sample: int,
 async def run_date(gw: Gateway, a: Person, b: Person, transcript: list[dict] | None = None,
                    save: Callable[[list[dict]], Awaitable[None]] | None = None,
                    emit: Event | None = None, cfg=settings, plan: tuple[int, ...] | None = None,
-                   samples: int | None = None, turn_route: str | None = "turns") -> DateResult:
+                   samples: int | None = None, turn_route: str | None = "turns",
+                   first_override: int | None = None) -> DateResult:
     plan = plan or cfg.turn_plan
     samples = samples or cfg.verdict_samples
     people = {a.id: a, b.id: b}
     scenario = scenario_for(a.id, b.id)
-    first = first_speaker(a.id, b.id)
+    first = first_override if first_override in (a.id, b.id) else first_speaker(a.id, b.id)
     order = [first, (b.id if first == a.id else a.id)]
     transcript = list(transcript or [])
     flags: list[str] = []

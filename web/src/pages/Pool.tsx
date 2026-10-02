@@ -248,6 +248,18 @@ function About({ token, pool, onChange }: { token: string; pool: Json; onChange:
         <p className="small muted">With a small group these numbers move a lot. We report whatever the data shows and never tune the baselines to make an idea win.</p>
       </section>
       <section className="section">
+        <h2>Is the scoring consistent?</h2>
+        <p className="why">Three checks on the harness itself. They measure consistency, not whether a match is right.</p>
+        <dl className="cols-3">
+          <div className="kv"><dt>Same verdict, asked twice (correlation)</dt><dd className="mono">{fmt(d?.test_retest?.r)}</dd>
+            <dd className="small muted">{d?.test_retest ? `${d.test_retest.n} verdicts re-asked; average score moved ${fmt(d.test_retest.mean_abs_diff, 1)} points` : "Not run yet"}</dd></div>
+          <div className="kv"><dt>Speaker order swapped</dt><dd className="mono">{d?.order_swap?.mean_shift == null ? "n/a" : (d.order_swap.mean_shift > 0 ? "+" : "") + fmt(d.order_swap.mean_shift, 2)}</dd>
+            <dd className="small muted">{d?.order_swap ? `average score shift over ${d.order_swap.n} replayed dates (0 means no first-speaker advantage)` : "Not run yet"}</dd></div>
+          <div className="kv"><dt>Richer profile, higher score?</dt><dd className="mono">{fmt(d?.richness_vs_score?.r)}</dd>
+            <dd className="small muted">correlation across {d?.richness_vs_score?.n ?? 0} people; reported, not adjusted for</dd></div>
+        </dl>
+      </section>
+      <section className="section">
         <h2>How much to trust this</h2>
         <ul className="hooks small">
           <li>Consistency can be measured; correctness cannot. A high rank means the two agents got along in this setup, not that two people would.</li>
