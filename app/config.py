@@ -23,7 +23,7 @@ class Settings(BaseSettings):
         "gemini:gemini-3.5-flash-lite": (0.30, 2.50),
         "gemini:gemini-3.5-flash": (1.50, 9.00),
     }
-    llm_budget_usd: float = 5.0  # whole-project ceiling for paid LLM calls; owner to confirm ($ or INR 500?)
+    llm_budget_usd: float = 5.0  # ceiling for paid LLM calls per server process; paid providers are skipped beyond it
     # Groq free limits per model: 1000 RPD, 8K TPM (response headers, 2026-10-02)
     daily_caps: dict[str, int] = {
         "groq:openai/gpt-oss-120b": 900, "groq:openai/gpt-oss-20b": 900, "groq:qwen/qwen3.8-27b": 900,
