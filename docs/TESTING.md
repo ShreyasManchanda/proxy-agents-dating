@@ -19,7 +19,7 @@ of any real model's output.
 
 ## What was verified by running the real thing
 
-These are not automated; they were run once, by hand, and are recorded in [`PROGRESS.md`](../PROGRESS.md) and [`DECISIONS.md`](DECISIONS.md).
+These are not automated; they were run once, by hand, and are recorded in [`DECISIONS.md`](DECISIONS.md) and [`RESULTS.md`](RESULTS.md).
 
 - Real scrapes of 25 people through the three Apify actors, and everything downstream on that data.
 - 12 real transcripts read in full and used to retune the prompts (the verdict calibration, the anti-mirroring instruction).

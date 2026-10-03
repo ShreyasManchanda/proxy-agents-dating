@@ -21,3 +21,4 @@ node_modules/
 web/dist/
 .impeccable/
 *.local.md
+PROGRESS.md

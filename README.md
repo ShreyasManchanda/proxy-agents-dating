@@ -100,7 +100,6 @@ deleted there. Deploying: [docs/DEPLOY.md](docs/DEPLOY.md).
 | [docs/DELIVERABLES.md](docs/DELIVERABLES.md) | The short write-ups and the video script |
 | [SPEC.md](SPEC.md) | The original build spec this implements |
 | [PRODUCT.md](PRODUCT.md) | Users, tone and design principles for the interface |
-| [PROGRESS.md](PROGRESS.md) | Chronological build log |
 
 ## Honest limits
 
