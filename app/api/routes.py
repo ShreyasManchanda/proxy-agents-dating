@@ -133,8 +133,9 @@ async def create_pool(body: PoolIn, request: Request):
         first = next(iter(in_demo.values()))
         return {"redirect": {"token": demo.token, "person_id": first}}
     if in_demo:
-        raise HTTPException(400, f"{len(in_demo)} of the people you added are already in the demo, so they can be opened "
-                                 "there directly. Remove them from the list and try again.")
+        n = len(in_demo)
+        raise HTTPException(400, f"{n} of the {len(cleaned)} people you added {'is' if n == 1 else 'are'} already in the demo, "
+                                 "so they can be opened there directly. Remove them from the list and try again.")
     _rate_limit(request)
     _runs["n"] += 1
     async with s() as db:

@@ -125,6 +125,8 @@ async def run_live_pool(sm, gw, pool_id: int, token: str, new_ids: list[int], ur
         await _phase(sm, pool_id, token, "ranking")
         await svc.run_debriefs(sm, gw, good, profiles)
         await _phase(sm, pool_id, token, "done")
+        logging.getLogger("proxy.jobs").warning("live run finished: llm spend so far $%.4f usage=%s", gw.spend_usd,
+                                                {k: v["calls"] for k, v in gw.usage.items() if v["calls"]})
 
 
 async def freeze_pool(sm, pool_id: int):
