@@ -15,7 +15,7 @@ from app.config import settings
 from app.extract.validators import VERDICT_DIMS, snap_quote, turn_problems, verdict_ok
 from app.llm.gateway import Gateway
 
-PROMPT_VERSION = "date-v1"
+PROMPT_VERSION = "date-v2"
 
 SCENARIOS = [
     "Your flight home is delayed three hours and you are both stuck at the gate.",
@@ -56,8 +56,10 @@ VERDICT_SYSTEM = (
     "transcript and PERSONA. Score each dimension 1-10: " + ", ".join(VERDICT_DIMS) + ". Use the full "
     "range and be a hard grader: 5 is an ordinary pleasant date and most dates should land between 4 and 6; "
     "7 means a real spark with no big mismatch; 8 or more is rare (well under one date in five); below 4 means "
-    "it clearly did not work. Before scoring above 6, name one concrete thing that did not fit. Set "
-    "second_date to true only if you would actually want to meet again (about one date in three, not most). Then "
+    "it clearly did not work. Before scoring above 6, name one concrete thing that did not fit. "
+    "second_date is a separate question from the scores: true if, on balance, you would say yes to another "
+    "evening with this person, even if they are not a perfect match; false if you would politely decline. "
+    "Expect to say yes to roughly four first dates in ten. Then "
     "second_date (true/false), reason (30 words max), and quote (an exact substring from the "
     "transcript, 25 words max, from the moment that mattered most). Return JSON only: "
     "{{\"scores\": {{...}}, \"second_date\": bool, \"reason\": str, \"quote\": str}}.\n"

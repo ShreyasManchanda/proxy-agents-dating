@@ -121,11 +121,13 @@ function Grid({ token, pool }: { token: string; pool: Json }) {
     dates.forEach((d) => { m.set(`${d.a}-${d.b}`, d); m.set(`${d.b}-${d.a}`, d); });
     return m;
   }, [dates]);
+  const scored = dates.map((d) => d.score).filter((x): x is number => x != null);
+  const lo = scored.length ? Math.min(...scored) : 0, hi = scored.length ? Math.max(...scored) : 10;
   const ready = pool.people.filter((p: Json) => p.status === "ready");
   if (ready.length < 2) return <div className="empty"><h3>Nobody to date yet</h3><p className="small">The grid appears once at least two profiles are ready.</p></div>;
   return (
     <>
-      <p className="small muted" style={{ marginBottom: "0.9rem" }}>Each square is one date. Darker means the two agents scored it higher. Open any square to read the transcript.</p>
+      <p className="small muted" style={{ marginBottom: "0.9rem" }}>Each square is one date, shaded from the lowest to the highest average score in this group. Open any square to read the transcript.</p>
       <div className="matrix-wrap">
         <table className="matrix">
           <thead><tr><th scope="col" /> {ready.map((p: Json) => <th scope="col" key={p.id}>{p.name}</th>)}</tr></thead>
@@ -137,7 +139,7 @@ function Grid({ token, pool }: { token: string; pool: Json }) {
                   if (r.id === c.id) return <td key={c.id}><span className="na">·</span></td>;
                   const d = cell.get(`${r.id}-${c.id}`);
                   if (!d) return <td key={c.id}><span className="na">–</span></td>;
-                  const pct = d.score != null ? Math.round(15 + ((d.score - 3) / 7) * 70) : 20;
+                  const pct = d.score != null ? Math.round(10 + ((d.score - lo) / Math.max(0.5, hi - lo)) * 78) : 20;
                   return (
                     <td key={c.id}>
                       <Link className={d.status} style={{ ["--pct" as string]: `${pct}%` }} to={`/p/${token}/date/${d.id}`}
@@ -183,7 +185,7 @@ function Rankings({ token, pool }: { token: string; pool: Json }) {
       </nav>
       <div>
         <h2 style={{ fontSize: "var(--t-lg)", marginBottom: "0.25rem" }}>Best fits for {names[cur!]}</h2>
-        <p className="small muted" style={{ marginBottom: "1rem" }}>Ranked from the dates, after correcting for how generously each agent scores and how broadly appealing each person is.</p>
+        <p className="small muted" style={{ marginBottom: "1rem" }}>Ranked from the dates, after correcting for how generously each agent scores and how broadly appealing each person is. A score is relative: 0.90 means better than about 90% of this person's other dates, not a rating out of one.</p>
         <div className="slider-box">
           <label htmlFor="w" className="small" style={{ fontWeight: 560 }}>How much to weigh their own taste versus mutual fit</label>
           <input id="w" type="range" min={0} max={1} step={0.05} value={w} onChange={(e) => setW(Number(e.target.value))} aria-valuetext={`${Math.round(w * 100)} percent own taste`} />

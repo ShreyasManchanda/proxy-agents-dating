@@ -120,6 +120,20 @@ async def load_profiles(db: AsyncSession, ids: list[int]) -> dict[int, dict]:
     return {r.person_id: r.data for r in rows}
 
 
+async def load_profiles_slim(db: AsyncSession, ids: list[int]) -> dict[int, dict]:
+    """Only the profile fields scoring and the pool pages need. Full profiles carry every observation and are
+    large; pulling 25 of them over a remote database costs seconds."""
+    d = m.Profile.data
+    rows = (await db.execute(select(
+        m.Profile.person_id, d["name"].astext, d["tags"].as_json(), d["dials"].as_json(),
+        d["stated_signals"].as_json(), d["richness_score"].as_float(), m.Profile.confidence,
+        d[("work", "summary")].astext, d[("identity", "location")].astext)
+        .where(m.Profile.person_id.in_(ids)))).all()
+    return {r[0]: {"name": r[1], "tags": r[2] or {}, "dials": r[3] or {}, "stated_signals": r[4] or [],
+                   "richness_score": r[5], "overall_confidence": r[6], "work": {"summary": r[7]},
+                   "identity": {"location": r[8]}} for r in rows}
+
+
 # ---------- pools ----------
 
 async def create_pool(db: AsyncSession, name: str, person_ids: list[int], frozen: bool = False) -> m.Pool:
@@ -278,7 +292,7 @@ def stated_by_topic(profile: dict) -> dict:
 async def compute_rankings(db: AsyncSession, ids: list[int], own_weight: float | None = None,
                            frozen: dict | None = None) -> dict:
     verdicts, debrief = await load_scoring_inputs(db, ids)
-    profiles = await load_profiles(db, ids)
+    profiles = await load_profiles_slim(db, ids)
     own = sc.own_scores(verdicts, debrief, frozen=frozen)
     conflicts = {}
     for (a, b) in own:

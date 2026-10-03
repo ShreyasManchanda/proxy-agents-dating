@@ -4,6 +4,7 @@ services:
     name: proxy-agents-dating
     runtime: docker
     plan: free
+    region: singapore   # next to the Supabase database (ap-southeast-1): far lower query latency
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL

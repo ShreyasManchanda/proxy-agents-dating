@@ -60,17 +60,16 @@ export default function Profile() {
         </aside>
 
         <div>
-          <Block title="What they are after" why="Their stated wishes come first, then what their behavior suggests. Inferred items are weakest.">
-            {prof.partner_wants?.length ? (
-              <ul className="claims" style={{ padding: 0 }}>
-                {prof.partner_wants.map((x: Json, i: number) => (
-                  <Claim key={i} c={{ ...x, claim: `${x.claim}` }} obs={obs} />
-                ))}
-              </ul>
-            ) : null}
-            {claims(prof.needs)}
-            {!prof.partner_wants?.length && !prof.needs?.length && empty("Not enough signal to say what they are looking for.")}
-          </Block>
+          {(prof.partner_wants?.length > 0 || prof.needs?.length > 0) && (
+            <Block title="What they are after" why="Their stated wishes come first, then what their behavior suggests. Inferred items are weakest.">
+              {prof.partner_wants?.length ? (
+                <ul className="claims" style={{ padding: 0 }}>
+                  {prof.partner_wants.map((x: Json, i: number) => <Claim key={i} c={x} obs={obs} />)}
+                </ul>
+              ) : null}
+              {claims(prof.needs)}
+            </Block>
+          )}
 
           {prof.stated_signals?.length > 0 && (
             <Block title="Stated in their own words" why="Only things they wrote themselves, shown with the exact quote. Nothing here is guessed.">
@@ -90,7 +89,8 @@ export default function Profile() {
           {(() => {
             const none = ([["Hobbies", prof.hobbies], ["Interests", prof.interests], ["Values", prof.values]] as [string, Json[]][])
               .filter(([, l]) => !l?.length).map(([t]) => t.toLowerCase());
-            return none.length ? <p className="small muted" style={{ padding: "1rem 0", borderTop: "1px solid var(--line)" }}>Not enough signal to say anything about their {none.join(", ")}.</p> : null;
+            if (!prof.partner_wants?.length && !prof.needs?.length) none.push("what they are looking for");
+            return none.length ? <p className="small muted" style={{ padding: "1rem 0", borderTop: "1px solid var(--line)" }}>Not enough signal to say anything about: {none.join(", ")}.</p> : null;
           })()}
 
           {(prof.contradictions?.length > 0) && (

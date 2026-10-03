@@ -253,8 +253,8 @@ async def extract_person(gw: Gateway, canon: dict, images: list[tuple[str, bytes
     raw_name = (display_name or (li or {}).get("name") or (ig or {}).get("full_name")
                 or (ig or {}).get("username") or "")
     prof["identity"] = {**(prof.get("identity") or {}), "name": " ".join(str(raw_name).split()) or None}
-    if not prof["identity"].get("location") and li and li.get("location"):
-        prof["identity"]["location"] = ", ".join(v for v in li["location"].values() if v) or None
+    if li and li.get("location"):  # LinkedIn's parsed location beats whatever the model lifted from a bio
+        prof["identity"]["location"] = ", ".join(v for v in li["location"].values() if v) or prof["identity"].get("location")
     ev_conf = [c["confidence"] for f in ("needs", "hobbies", "interests", "values") for c in prof[f]]
     prof["overall_confidence"] = round((sum(ev_conf) / len(ev_conf) if ev_conf else 0.0) * (0.5 + 0.5 * rich), 3)
     if canon["confidence"] == "low":
