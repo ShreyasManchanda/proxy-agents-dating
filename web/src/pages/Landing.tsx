@@ -11,8 +11,8 @@ export default function Landing() {
   const nav = useNavigate();
   const [cfg, setCfg] = useState<Json | null>(null);
   const [demo, setDemo] = useState<Json | null>(null);
-  const [rows, setRows] = useState<Row[]>([blank(), blank()]);
-  const [joinDemo, setJoinDemo] = useState(false);
+  const [rows, setRows] = useState<Row[]>([blank()]);
+  const [joinDemo, setJoinDemo] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export default function Landing() {
     }).catch(() => setErr("Could not reach the server. Try again in a moment."));
   }, []);
 
-  const max = cfg?.live_pool_max ?? 8;
+  const max = cfg?.live_pool_max ?? 5;
   const filled = rows.filter((r) => r.linkedin.trim() || r.instagram.trim());
   const needed = joinDemo ? 1 : 2;
   const pasteOff = cfg && !cfg.paste_enabled;
@@ -34,12 +34,13 @@ export default function Landing() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (filled.length < needed) return setErr(joinDemo ? "Add at least one person." : "Add at least two people to rank them against each other.");
+    if (filled.length < needed) return setErr(joinDemo ? "Add at least one person." : "Untick the demo option only if you are adding at least two people.");
     if (filled.some((r) => !r.linkedin.trim() || !r.instagram.trim())) return setErr("Each person needs both a LinkedIn and an Instagram link.");
     setBusy(true);
     try {
-      const { token } = await api.createPool(filled, joinDemo);
-      nav(`/p/${token}`);
+      const out = await api.createPool(filled, joinDemo);
+      if (out.redirect) nav(`/p/${out.redirect.token}/person/${out.redirect.person_id}`);  // already in the demo
+      else nav(`/p/${out.token}`);
     } catch (x) {
       setErr((x as Error).message);
       setBusy(false);
@@ -75,12 +76,18 @@ export default function Landing() {
             </button>
             <label className="small" style={{ display: "flex", gap: "0.5rem", alignItems: "center", minHeight: 44 }}>
               <input type="checkbox" checked={joinDemo} onChange={(e) => setJoinDemo(e.target.checked)} />
-              Also date everyone in the 25-person demo
+              Rank against the 25-person demo too (recommended)
             </label>
           </div>
           {err && <Notice kind="bad">{err}</Notice>}
           {pasteOff && <Notice kind="warn">New runs are switched off for now. The demo is still open.</Notice>}
           {noRuns && !pasteOff && <Notice kind="warn">Today's live runs are used up. The demo is still open; try a new run tomorrow.</Notice>}
+          <p className="small muted" style={{ maxWidth: "60ch" }}>
+            {joinDemo
+              ? `Each person dates all 25 in the demo, and anyone you add dates each other. Live runs are limited to ${max} people.`
+              : `Only the people you add date each other, so add at least two. Live runs are limited to ${max} people.`}
+            {" "}One person takes about five minutes with the demo, a couple without.
+          </p>
           <div className="row-actions">
             <button className="btn" type="submit" disabled={busy || !!pasteOff || !!noRuns}>
               {busy ? "Starting…" : "Start the dates"} <ArrowRight size={18} aria-hidden />

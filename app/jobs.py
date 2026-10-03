@@ -3,8 +3,9 @@ refresh resumes from the result URL. Pasted people stay private to their pool li
 from __future__ import annotations
 
 import asyncio
+import logging
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app import service as svc
 from app.config import settings
@@ -25,12 +26,29 @@ def live_sem() -> asyncio.Semaphore:
     return _live_sem
 
 
+async def _retry(factory, tries: int = 4):
+    """Run a database step, retrying on a dropped connection with a fresh one. The link to the remote database
+    can reset mid-write; a live run should survive one hiccup instead of failing the person."""
+    from sqlalchemy.exc import DBAPIError, OperationalError
+    for i in range(tries):
+        try:
+            return await factory()
+        except (DBAPIError, OperationalError, ConnectionError) as e:
+            transient = getattr(e, "connection_invalidated", False) or "connection" in str(e).lower()
+            if i == tries - 1 or not transient:
+                raise
+            logging.getLogger("proxy.jobs").warning("database connection dropped, retrying (%s/%s)", i + 1, tries - 1)
+            await asyncio.sleep(1.5 * (i + 1))
+
+
 async def _set(sm, person_id: int, status: str, note: str | None = None):
-    async with sm() as db:
-        p = await db.get(m.Person, person_id)
-        if p:
-            p.status, p.note = status, note
-            await db.commit()
+    async def go():
+        async with sm() as db:
+            p = await db.get(m.Person, person_id)
+            if p:
+                p.status, p.note = status, note
+                await db.commit()
+    await _retry(go)
 
 
 async def _phase(sm, pool_id: int, token: str, phase: str, **extra):
@@ -48,9 +66,11 @@ async def process_person(sm, gw, token: str, person_id: int, li: str, ig: str, s
         async with _apify_sem:
             kw = {"scraper": scraper} if scraper else {}
             out = await ingest_pair(li, ig, **kw)
-        async with sm() as db:
-            await svc.store_scrape(db, person_id, out["raw"])
-            await db.commit()
+        async def store():
+            async with sm() as db:
+                await svc.store_scrape(db, person_id, out["raw"])
+                await db.commit()
+        await _retry(store)
         note = " ".join(out["messages"]) or None
         await _set(sm, person_id, "reading", note or "Reading the profile")
         svc.bus.publish(token, "person", {"id": person_id, "status": "reading", "note": note})
@@ -58,11 +78,15 @@ async def process_person(sm, gw, token: str, person_id: int, li: str, ig: str, s
         igc = out["person"]["instagram"]
         if igc and igc["posts"]:
             images = await download_selected(igc["posts"])
-        async with sm() as db:
-            for ref, data in images:
-                db.add(m.Image(person_id=person_id, post_ref=ref, bytes=data, selected=True))
-            prof = await svc.build_profile(db, gw, person_id, images, None)
-            await db.commit()
+        async def read():
+            async with sm() as db:
+                await db.execute(delete(m.Image).where(m.Image.person_id == person_id))  # idempotent on retry
+                for ref, data in images:
+                    db.add(m.Image(person_id=person_id, post_ref=ref, bytes=data, selected=True))
+                prof = await svc.build_profile(db, gw, person_id, images, None)  # LLM calls are cached on retry
+                await db.commit()
+                return prof
+        prof = await _retry(read)
         await _set(sm, person_id, "ready", note)
         svc.bus.publish(token, "person", {"id": person_id, "status": "ready", "name": prof["name"], "note": note})
         return True
@@ -70,6 +94,7 @@ async def process_person(sm, gw, token: str, person_id: int, li: str, ig: str, s
         await _set(sm, person_id, "failed", str(e))
         svc.bus.publish(token, "person", {"id": person_id, "status": "failed", "note": str(e)})
     except Exception as e:  # never a bare spinner: say what failed
+        logging.getLogger("proxy.jobs").exception("process_person %s failed", person_id)
         msg = f"Something went wrong while reading this profile ({type(e).__name__}). Try again later."
         await _set(sm, person_id, "failed", msg)
         svc.bus.publish(token, "person", {"id": person_id, "status": "failed", "note": msg})

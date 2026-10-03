@@ -61,7 +61,8 @@ async def main():
         first_orig = d.transcript[0]["speaker"]
         res = await run_date(gw, DatePerson(a, profiles[a]["name"], profiles[a]["persona_card"]),
                              DatePerson(b, profiles[b]["name"], profiles[b]["persona_card"]),
-                             plan=settings.turn_plan, samples=1, first_override=(b if first_orig == a else a))
+                             plan=settings.turn_plan, samples=1, turn_route="live",  # Gemini first, like the original dates
+                             first_override=(b if first_orig == a else a))
         vs = [v for v in verdicts if v.date_id == d.id]
         if not vs or not all(res.verdicts.get(p) for p in (a, b)):
             return None

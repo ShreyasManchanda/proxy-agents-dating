@@ -116,9 +116,27 @@ async def create_pool(body: PoolIn, request: Request):
             raise HTTPException(400, f"Person {i}: {e}")
     if len(set(cleaned)) != len(cleaned):
         raise HTTPException(400, "The same person appears twice.")
+    s = sm(request)
+    # Someone who is already in the public demo needs no run at all: open their page there.
+    async with s() as db:
+        demo = (await db.execute(select(m.Pool).where(m.Pool.frozen.is_(True)).order_by(m.Pool.id))).scalars().first()
+        in_demo = {}
+        if demo:
+            members = set(await svc.pool_members(db, demo.id))
+            for li, ig in cleaned:
+                row = (await db.execute(select(m.Person).where(
+                    m.Person.linkedin_url == li, m.Person.instagram_url == ig, m.Person.public.is_(True)
+                ).order_by(m.Person.id))).scalars().first()
+                if row and row.id in members:
+                    in_demo[(li, ig)] = row.id
+    if in_demo and len(in_demo) == len(cleaned):
+        first = next(iter(in_demo.values()))
+        return {"redirect": {"token": demo.token, "person_id": first}}
+    if in_demo:
+        raise HTTPException(400, f"{len(in_demo)} of the people you added are already in the demo, so they can be opened "
+                                 "there directly. Remove them from the list and try again.")
     _rate_limit(request)
     _runs["n"] += 1
-    s = sm(request)
     async with s() as db:
         demo_ids, frozen = [], None
         if body.add_to_demo:
@@ -129,10 +147,6 @@ async def create_pool(body: PoolIn, request: Request):
             frozen = jobs.from_json_stats(demo.stats["frozen_stats"]) if demo.stats and demo.stats.get("frozen_stats") else None
         new_ids, urls = [], {}
         for li, ig in cleaned:
-            existing = (await db.execute(select(m.Person).where(m.Person.linkedin_url == li,
-                                                               m.Person.instagram_url == ig))).scalar_one_or_none()
-            if existing and existing.public:
-                raise HTTPException(400, "That person is part of the public demo already.")
             # a pasted person is private to this run: always a fresh row, so deleting it removes only their data
             row = m.Person(linkedin_url=li, instagram_url=ig, public=False, status="pending")
             db.add(row)

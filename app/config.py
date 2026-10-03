@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     apify_max_charge_per_run_usd: float = 0.10
 
     # live pools
-    live_pool_max: int = 8
+    live_pool_max: int = 5  # a run that also joins the demo is about 25 dates per person
     live_concurrency: int = 1  # Apify free plan: 5 concurrent actor jobs, 3 per person
     live_turn_plan: tuple[int, ...] = (3, 4, 3)
     live_verdict_samples: int = 2

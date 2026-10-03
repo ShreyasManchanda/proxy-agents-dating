@@ -64,6 +64,13 @@ Models, prices, rate limits and the dollar ceiling are in `app/config.py`. Date 
 verdicts, extraction and vision run on Gemini Flash-Lite; if the dollar budget is spent, paid calls stop and Groq
 takes over.
 
+## Pasting your own people
+
+By default a pasted person is added to the 25-person demo: they get a profile, 25 dates and their own ranking, and anyone
+pasted with them also dates each other. Untick that to date only the pasted people (at least two). Live runs are limited to
+**5 people**, because a run that joins the demo is about 25 dates per person and the model providers are free or capped.
+Someone who is already in the demo opens instantly. Pasted people are private to the run link and can be deleted there.
+
 ## Honest limits
 
 - Consistency can be measured here; correctness cannot. A high rank means two agents got along in this setup, not
